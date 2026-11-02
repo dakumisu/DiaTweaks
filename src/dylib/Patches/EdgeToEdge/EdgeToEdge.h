@@ -1,7 +1,7 @@
 // Shared by edge-to-edge and square corners, which only works on top of it.
 #import "StdPatch/StdPatch.h"
 
-extern DPPatch DPEdgeToEdge, DPSquareSidebarCorners;
+extern DPPatch DPEdgeToEdge, DPSquareSidebarCorners, DPSquareWindowCorners;
 extern const CGFloat DPWindowPadding;
 extern NSHashTable<NSView *> *DPContainers;  // Every web content container Dia placed.
 static const CACornerMask DPLeftCorners = kCALayerMinXMinYCorner | kCALayerMinXMaxYCorner;
@@ -19,6 +19,7 @@ void DPRoundCornerControls(NSView *container);
 CGPathRef DPReshapeSetPath(CALayer *layer, BOOL shadow, CGPathRef path);
 CAAnimation *DPReshapeDiaAnimation(CALayer *layer, CAAnimation *animation);
 BOOL DPBesideSidebar(NSView *container);
+BOOL DPRoundedSide(CALayer *layer, BOOL right);  // Whether the page's corners on that side are round.
 BOOL DPFullScreen(NSView *container);  // In a full screen window, with edge-to-edge not stepping aside for Chat.
 CGFloat DPWindowCornerGrowth(NSWindow *window);  // How much rounder macOS 26 window corners made it. WindowCorners.m
 CGPathRef DPReshapeCorners(CGPathRef path, CGFloat extent, CGFloat rightScale, CGFloat leftScale);

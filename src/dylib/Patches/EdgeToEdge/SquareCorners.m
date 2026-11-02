@@ -92,10 +92,13 @@ BOOL DPFullScreen(NSView *container) {
     return (container.window.styleMask & NSWindowStyleMaskFullScreen) && !DPChatCard(container);
 }
 
-// How far the page's left and right corners go square: by the sidebar, and wherever they meet a full screen's edges.
+// How far the page's left and right corners go square: by the sidebar, and wherever they meet the window's edge when
+// that's asked for or it's full screen.
 static void DPSquareness(NSView *container, CGFloat edgeToEdge, CGFloat squareCorners, CGFloat *left, CGFloat *right) {
-    *right = DPFullScreen(container) ? edgeToEdge : 0;
-    *left = DPBesideSidebar(container) ? squareCorners * edgeToEdge : *right;
+    CGFloat window = DPFullScreen(container) ? edgeToEdge : 0;
+    if (DPSquareWindowCorners.progress > 0 && !DPChatCard(container)) window = MAX(window, DPSquareWindowCorners.progress * edgeToEdge);
+    *right = window;
+    *left = DPBesideSidebar(container) ? squareCorners * edgeToEdge : window;
 }
 
 // `base` is Dia's radius, `grow` how much rounder the page is, `left` and `right` how far each side has gone square.
@@ -173,15 +176,19 @@ CAAnimation *DPReshapeDiaAnimation(CALayer *layer, CAAnimation *animation) {
     return reshaped;
 }
 
+BOOL DPRoundedSide(CALayer *layer, BOOL right) {
+    if ([layer respondsToSelector:@selector(cornerRadii)]) return (right ? layer.cornerRadii.topRight : layer.cornerRadii.topLeft).width > 0;
+    if (layer.mask) return layer.mask.sublayers[right ? 1 : 0].cornerRadius > 0;
+    return (layer.maskedCorners & (right ? DPRightCorners : DPLeftCorners)) != 0;
+}
+
 static NSString *DPVerifySquareCorners(DPPatch *patch) {
     for (NSView *container in DPFindViews(DPDiaContentContainer)) {
         CALayer *layer = DPRoundedContent(container).layer;
         if (!layer) return @"no rounded web content found";
         if (!DPBesideSidebar(container)) continue;
         BOOL square = patch->on && DPEdgeToEdge.on;
-        BOOL round = [layer respondsToSelector:@selector(cornerRadii)] ? layer.cornerRadii.topLeft.width > 0
-                   : layer.mask ? layer.mask.sublayers.firstObject.cornerRadius > 0 : (layer.maskedCorners & DPLeftCorners) != 0;
-        if (round == square) return square ? @"corners by the sidebar are round" : @"corners by the sidebar are square";
+        if (DPRoundedSide(layer, NO) == square) return square ? @"corners by the sidebar are round" : @"corners by the sidebar are square";
     }
     return nil;
 }
